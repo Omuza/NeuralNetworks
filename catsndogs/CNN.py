@@ -5,33 +5,47 @@ import pickle
 from tensorflow.keras.callbacks import TensorBoard
 import time
 
-NAME = 'Cats-vs-dog-cnn-64x2-{}'.format(int(time.time()))
-
-tensorboard = TensorBoard(log_dir='logs\\{}'.format(NAME))
 
 X = pickle.load(open('X.pickle', 'rb'))
 y = pickle.load(open('y.pickle', 'rb'))
 
 X = X/255.0
 
-model = Sequential()
-model.add(Conv2D(64, (3,3), input_shape = X.shape[1:]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
 
-model.add(Conv2D(64, (3,3)))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
+dense_layers = [0]
+layer_sizes = [64]
+conv_layers = [2]
 
-model.add(Flatten())
+for dense_layer in dense_layers:
+    for layer_size in layer_sizes:
+        for conv_layer in conv_layers:
+            NAME = "{}-conv-{}-nodes-{}-dense-{}".format(conv_layer, layer_size, dense_layer,int(time.time()))
+            tensorboard = TensorBoard(log_dir='logs\\{}'.format(NAME))
+            print(NAME)
 
-#model.add(Dense(64))
-#model.add(Activation('relu'))
+            model = Sequential()
 
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
+            model.add(Conv2D(layer_size, (3,3), input_shape = X.shape[1:]))
+            model.add(Activation('relu'))
+            model.add(MaxPooling2D(pool_size=(2,2)))
 
-model.compile(loss='binary_crossentropy',optimizer='adam', metrics=['accuracy'])
+            for l in range(conv_layer-1):
 
-model.fit(X, y, batch_size=32,epochs=7, validation_split=0.1, callbacks=[tensorboard])
-model.save('{}.model'.format(NAME))
+                model.add(Conv2D(layer_size, (3,3)))
+                model.add(Activation('relu'))
+                model.add(MaxPooling2D(pool_size=(2,2)))
+
+            model.add(Flatten())
+
+            for l in range(dense_layer):
+                model.add(Dense(layer_size))
+                model.add(Activation('relu'))
+                model.add(Dropout(0.2))
+
+            model.add(Dense(1))
+            model.add(Activation('sigmoid'))
+
+            model.compile(loss='binary_crossentropy',optimizer='adam', metrics=['accuracy'])
+
+            model.fit(X, y, batch_size=32,epochs=4, validation_split=0.1, callbacks=[tensorboard])
+            model.save('{}.model'.format(NAME))
