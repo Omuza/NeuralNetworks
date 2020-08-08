@@ -1,2 +1,3 @@
 # NeuralNetworks
-Neural networks with python
+Python OOP scripts + NeuralNetworks
+
